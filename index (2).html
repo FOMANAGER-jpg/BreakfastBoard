@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>White Rocks — Breakfast Board</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCTLy2osf3ORBYdOm-EqpxiYbQkpOrlBIU",
+  authDomain: "diningboard-d9537.firebaseapp.com",
+  databaseURL: "https://breakfast-dining-board-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "diningboard-d9537",
+  storageBucket: "diningboard-d9537.firebasestorage.app",
+  messagingSenderId: "784177296893",
+  appId: "1:784177296893:web:4b5b4d933c1b1efcfa5594"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+window._fbSet = (path, data) => set(ref(db, path), data);
+window._fbListen = (path, cb) => onValue(ref(db, path), snap => cb(snap.val()));
+window._fbReady = true;
+document.dispatchEvent(new Event('firebase-ready'));
+</script>
+<style>
+:root{
+  --bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --text:#f0f2f8;--muted:#8b90a8;
+  --green:#34d399;--green-bg:rgba(52,211,153,0.12);
+  --amber:#fbbf24;--amber-bg:rgba(251,191,36,0.12);
+  --blue:#60a5fa;--blue-bg:rgba(96,165,250,0.1);
+  --red:#f87171;--red-bg:rgba(248,113,113,0.12);
+  --gold:#f59e0b;--gold-bg:rgba(245,158,11,0.12);
+  --radius:10px;--radius-lg:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.hotel-name{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500;}
+.page-title{font-size:17px;font-weight:600;color:var(--gold);}
+.live-time{font-family:'DM Mono',monospace;font-size:15px;color:var(--gold);font-weight:500;}
+.live-date{font-size:10px;color:var(--muted);}
+.autosave-badge{font-size:10px;color:var(--green);background:var(--green-bg);border:1px solid rgba(52,211,153,.2);border-radius:5px;padding:2px 7px;margin-top:3px;display:none;}
+.autosave-badge.show{display:inline-block;}
+.tab-bar{display:flex;background:var(--surface);border-bottom:1px solid var(--border);padding:0 12px;}
+.tab{flex:1;padding:12px 6px;border:none;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;transition:all .18s;}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.panel{display:none;}.panel.active{display:block;}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;}
+.stat-label{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:4px;}
+.stat-value{font-size:24px;font-weight:600;line-height:1;}
+.stat-value.green{color:var(--green);}.stat-value.amber{color:var(--amber);}.stat-value.blue{color:var(--blue);}.stat-value.gold{color:var(--gold);}
+.rem-banner{margin:0 12px 12px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:12px 16px;display:flex;align-items:center;gap:14px;}
+.rem-info{flex:1;}.rem-title{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:2px;}
+.rem-count{font-size:30px;font-weight:700;color:var(--amber);line-height:1;}
+.rem-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.prog-col{flex:2;}.prog-track{background:rgba(255,255,255,.06);border-radius:99px;height:7px;overflow:hidden;margin-bottom:4px;}
+.prog-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--gold),var(--green));transition:width .5s ease;}
+.prog-pct{font-size:11px;color:var(--muted);text-align:right;}
+.controls{display:flex;gap:8px;padding:0 12px 10px;}
+.search-wrap{flex:1;position:relative;}
+.search-wrap input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:9px 10px 9px 32px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;}
+.search-wrap input::placeholder{color:var(--muted);}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;}
+.filter-btn{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:9px 11px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;white-space:nowrap;}
+.filter-btn.active{border-color:var(--gold);color:var(--gold);background:var(--gold-bg);}
+.table-wrap{padding:0 12px 110px;}
+.room-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:7px;overflow:hidden;}
+.room-card.is-arrived{border-left:3px solid var(--green);}
+.room-card.is-external{border-left:3px solid var(--gold);}
+.room-card.has-allergy{border-left:3px solid var(--red);}
+.card-main{display:flex;align-items:flex-start;padding:11px 14px;gap:11px;}
+.room-num{font-family:'DM Mono',monospace;font-size:16px;font-weight:500;min-width:38px;padding-top:2px;}
+.guest-info{flex:1;min-width:0;}
+.name-row{display:flex;align-items:center;gap:6px;margin-bottom:2px;}
+.guest-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;}
+.btn-edit{background:transparent;border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;flex-shrink:0;}
+.guest-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.pkg-badge{font-size:9px;text-transform:uppercase;letter-spacing:.08em;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:1px 6px;color:var(--muted);font-weight:700;}
+.pkg-badge.external{background:var(--gold-bg);border-color:rgba(245,158,11,.3);color:var(--gold);}
+.guest-count{font-size:12px;color:var(--muted);}
+.arr-time{font-family:'DM Mono',monospace;font-size:12px;color:var(--green);}
+.tag{display:inline-flex;align-items:center;gap:3px;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700;margin-top:3px;margin-right:3px;}
+.tag.allergy{background:var(--red-bg);border:1px solid rgba(248,113,113,.25);color:var(--red);}
+.tag.paid-ext{background:var(--gold-bg);border:1px solid rgba(245,158,11,.25);color:var(--gold);}
+.card-actions{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;}
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:7px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;}
+.status-badge.pending{background:var(--amber-bg);color:var(--amber);}
+.status-badge.arrived{background:var(--green-bg);color:var(--green);}
+.status-badge.external{background:var(--gold-bg);color:var(--gold);}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
+.dot.green{background:var(--green);}.dot.amber{background:var(--amber);animation:blink 1.5s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.btn-row{display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
+.btn-checkin{background:var(--gold-bg);border:1px solid rgba(245,158,11,.3);border-radius:7px;padding:7px 13px;color:var(--gold);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.btn-ext{background:var(--gold-bg);border:1px solid rgba(245,158,11,.3);border-radius:7px;padding:7px 11px;color:var(--gold);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.btn-undo{background:transparent;border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;}
+.empty{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:14px;}
+/* REPORT */
+.report-wrap{padding:14px 14px 100px;}
+.report-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+.report-title{font-size:19px;font-weight:600;}.report-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.export-btn{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;}
+.section-title{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:700;padding-bottom:7px;border-bottom:1px solid var(--border);margin-bottom:10px;}
+.section-title.gold-sec{color:var(--gold);border-bottom-color:rgba(245,158,11,.3);}
+.section-title.green-sec{color:var(--green);border-bottom-color:rgba(52,211,153,.3);}
+.report-section{margin-bottom:20px;}
+.sum-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.sum-row:last-child{border-bottom:none;}
+.sum-key{color:var(--muted);}.sum-val{font-weight:600;}
+.sum-val.green{color:var(--green);}.sum-val.amber{color:var(--amber);}.sum-val.red{color:var(--red);}.sum-val.blue{color:var(--blue);}.sum-val.gold{color:var(--gold);}
+.rev-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px;}
+.rev-card{border-radius:var(--radius-lg);padding:14px 16px;border:1px solid;}
+.rev-card.ext-c{background:var(--gold-bg);border-color:rgba(245,158,11,.25);grid-column:1/-1;}
+.rev-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:6px;}
+.rev-card.ext-c .rev-lbl{color:var(--gold);}
+.rev-amt{font-size:28px;font-weight:700;line-height:1;}
+.rev-card.ext-c .rev-amt{color:var(--gold);}
+.rev-sub{font-size:11px;color:var(--muted);margin-top:4px;}
+.wave-outer{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;}
+.wave-bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-bottom:5px;}
+.wave-bar{flex:1;background:rgba(245,158,11,.22);border-radius:3px 3px 0 0;min-height:3px;position:relative;cursor:default;}
+.wave-bar:hover{background:var(--gold);}
+.wave-tip{display:none;position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);border-radius:5px;padding:3px 7px;font-size:10px;white-space:nowrap;color:var(--text);z-index:10;}
+.wave-bar:hover .wave-tip{display:block;}
+.wave-lbls{display:flex;gap:4px;}.wave-lbl{flex:1;font-size:8px;color:var(--muted);text-align:center;}
+.timeline{display:flex;flex-direction:column;gap:5px;}
+.tl-item{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;}
+.tl-time{font-family:'DM Mono',monospace;font-size:12px;color:var(--green);min-width:42px;font-weight:500;}
+.tl-room{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;min-width:32px;}
+.tl-name{font-size:12px;color:var(--muted);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.tl-tag{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;}
+.tl-tag.ext{background:var(--gold-bg);color:var(--gold);}
+/* HISTORY */
+.history-wrap{padding:14px 14px 100px;}
+.history-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.history-title{font-size:19px;font-weight:600;}
+.history-list{display:flex;flex-direction:column;gap:10px;}
+.history-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;cursor:pointer;}
+.history-card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;}
+.history-date{font-size:15px;font-weight:600;}
+.history-meta{display:flex;gap:12px;align-items:center;}
+.history-stat{font-size:12px;color:var(--muted);}
+.history-stat span{color:var(--text);font-weight:500;}
+.history-chevron{color:var(--muted);font-size:16px;transition:transform .2s;}
+.history-card.expanded .history-chevron{transform:rotate(90deg);}
+.history-detail{display:none;border-top:1px solid var(--border);padding:14px 16px;}
+.history-card.expanded .history-detail{display:block;}
+.history-empty{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:14px;}
+.history-action-row{display:flex;gap:8px;margin-top:12px;}
+.btn-export-day{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:8px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;}
+.btn-delete-day{background:var(--red-bg);border:1px solid rgba(248,113,113,.2);border-radius:var(--radius);padding:8px 14px;color:var(--red);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;margin-left:auto;}
+/* IMPORT */
+.import-wrap{padding:14px 14px 100px;}
+.import-title{font-size:19px;font-weight:600;margin-bottom:6px;}
+.import-sub{font-size:13px;color:var(--muted);margin-bottom:20px;}
+.drop-zone{border:2px dashed var(--border2);border-radius:var(--radius-lg);padding:40px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface);}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--gold);background:var(--gold-bg);}
+.drop-icon{font-size:40px;margin-bottom:12px;}
+.drop-title{font-size:15px;font-weight:600;margin-bottom:6px;}
+.drop-sub{font-size:13px;color:var(--muted);margin-bottom:16px;}
+.btn-browse{background:var(--gold);border:none;border-radius:var(--radius);padding:10px 22px;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+.import-result{margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;display:none;}
+.import-result.show{display:block;}
+.import-result-title{font-size:14px;font-weight:600;margin-bottom:10px;}
+.import-preview{max-height:300px;overflow-y:auto;}
+.preview-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.preview-row:last-child{border-bottom:none;}
+.preview-room{font-family:'DM Mono',monospace;font-weight:500;min-width:36px;}
+.preview-pkg{font-size:10px;background:var(--surface2);border-radius:4px;padding:1px 6px;color:var(--muted);font-weight:700;}
+.preview-allergy{font-size:11px;color:var(--red);background:var(--red-bg);border-radius:4px;padding:1px 7px;}
+.import-actions{display:flex;gap:10px;margin-top:14px;}
+.btn-import-confirm{flex:2;background:var(--green);border:none;border-radius:var(--radius);padding:11px;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-import-cancel{flex:1;background:transparent;border:1px solid var(--border2);border-radius:var(--radius);padding:11px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;}
+.import-log{margin-top:12px;font-size:12px;color:var(--muted);line-height:1.7;}
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:22px;width:350px;max-width:calc(100vw - 28px);max-height:90vh;overflow-y:auto;}
+.modal h3{font-size:16px;font-weight:600;margin-bottom:14px;}
+.form-row{margin-bottom:10px;}
+.form-row label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.07em;}
+.form-row input,.form-row select{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 11px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;}
+.form-row select option{background:var(--surface);}
+.modal-btns{display:flex;gap:8px;margin-top:14px;}
+.btn-cancel{flex:1;background:transparent;border:1px solid var(--border2);border-radius:var(--radius);padding:10px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;}
+.btn-save{flex:2;border:none;border-radius:var(--radius);padding:10px;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;background:var(--gold);}
+.danger-zone{background:var(--red-bg);border:1px solid rgba(248,113,113,.2);border-radius:8px;padding:10px 12px;margin-top:10px;}
+.danger-title{font-size:11px;color:var(--red);font-weight:700;margin-bottom:4px;}
+.danger-sub{font-size:11px;color:var(--muted);margin-bottom:8px;}
+.danger-btns{display:flex;gap:6px;flex-wrap:wrap;}
+.btn-danger{background:transparent;border:1px solid rgba(248,113,113,.3);border-radius:7px;padding:6px 10px;color:var(--red);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;}
+.fabs{position:fixed;bottom:20px;right:16px;display:flex;flex-direction:column;gap:10px;align-items:flex-end;z-index:50;}
+.fab{border:none;border-radius:50px;padding:13px 18px;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;box-shadow:0 4px 18px rgba(0,0,0,.45);}
+.fab.gold{background:var(--gold);}
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="hotel-name">White Rocks Hotel &amp; Bungalows</div>
+    <div class="page-title">&#9728; Breakfast Buffet Board</div>
+  </div>
+  <div style="text-align:right;">
+    <div class="live-date" id="live-date"></div>
+    <div class="live-time" id="live-time"></div>
+    <div class="autosave-badge" id="autosave-badge">&#10003; Saved</div>
+  </div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab active" onclick="showTab('board',this)">&#9632; Live Board</button>
+  <button class="tab" onclick="showTab('report',this)">&#9650; Report</button>
+  <button class="tab" onclick="showTab('history',this)">&#128197; History</button>
+  <button class="tab" onclick="showTab('import',this)">&#8679; Import</button>
+</div>
+
+<!-- BOARD -->
+<div id="panel-board" class="panel active">
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-label">Rooms</div><div class="stat-value" id="s-total">-</div></div>
+    <div class="stat-card"><div class="stat-label">Arrived</div><div class="stat-value green" id="s-arrived">-</div></div>
+    <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-value amber" id="s-pending">-</div></div>
+    <div class="stat-card"><div class="stat-label">Guests in</div><div class="stat-value gold" id="s-guests">-</div></div>
+  </div>
+  <div class="rem-banner">
+    <div class="rem-info">
+      <div class="rem-title">Rooms still to arrive</div>
+      <div class="rem-count" id="rem-count">-</div>
+      <div class="rem-sub" id="rem-sub"></div>
+    </div>
+    <div class="prog-col">
+      <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+      <div class="prog-pct" id="prog-pct">-</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="search-wrap">
+      <span class="search-icon">&#128269;</span>
+      <input type="text" id="search-input" placeholder="Search room or guest..." oninput="render()">
+    </div>
+    <button class="filter-btn" id="f-pending" onclick="toggleFilter('pending')">Pending</button>
+    <button class="filter-btn" id="f-arrived" onclick="toggleFilter('arrived')">Arrived</button>
+    <button class="filter-btn" id="f-ext" onclick="toggleFilter('ext')" style="color:var(--gold);">External</button>
+  </div>
+  <div class="table-wrap" id="board-list"></div>
+</div>
+
+<!-- REPORT -->
+<div id="panel-report" class="panel">
+  <div class="report-wrap" id="report-content"></div>
+</div>
+
+<!-- HISTORY -->
+<div id="panel-history" class="panel">
+  <div class="history-wrap">
+    <div class="history-header">
+      <div class="history-title">&#128197; History</div>
+      <button class="btn-save" style="flex:unset;padding:8px 14px;font-size:12px;background:var(--gold);border:none;border-radius:var(--radius);color:#fff;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;" onclick="saveToday()">&#128190; Save Today Now</button>
+    </div>
+    <div class="history-list" id="history-list"></div>
+  </div>
+</div>
+
+<!-- IMPORT -->
+<div id="panel-import" class="panel">
+  <div class="import-wrap">
+    <div class="import-title">&#8679; Import In-House List</div>
+    <div class="import-sub">Ανέβασε το PDF από το Protel. Όλα τα δωμάτια έχουν δικαίωμα πρωινού. Εξωτερικοί επισκέπτες χρεώνονται €35/άτομο.</div>
+    <div class="drop-zone" id="drop-zone"
+      ondragover="dropOver(event)" ondragleave="dropLeave(event)" ondrop="dropFile(event)"
+      onclick="document.getElementById('file-input').click()">
+      <div class="drop-icon">&#9728;</div>
+      <div class="drop-title">Drag &amp; drop το PDF εδώ</div>
+      <div class="drop-sub">ή επίλεξε αρχείο</div>
+      <button class="btn-browse" onclick="event.stopPropagation();document.getElementById('file-input').click()">&#128194; Browse file</button>
+    </div>
+    <input type="file" id="file-input" accept=".pdf,.txt" style="display:none" onchange="handleFile(event)">
+    <div class="import-result" id="import-result">
+      <div class="import-result-title" id="import-result-title"></div>
+      <div class="import-preview" id="import-preview"></div>
+      <div class="import-log" id="import-log"></div>
+      <div class="import-actions">
+        <button class="btn-import-cancel" onclick="cancelImport()">Cancel</button>
+        <button class="btn-import-confirm" onclick="confirmImport()">&#10003; Apply to Live Board</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FABS -->
+<div class="fabs" id="fabs">
+  <button class="fab gold" onclick="openAddModal()">+ Add Guest</button>
+</div>
+
+<!-- ADD MODAL -->
+<div class="modal-bg" id="add-modal">
+  <div class="modal">
+    <h3>Add Guest</h3>
+    <div class="form-row"><label>Room / Name</label><input type="text" id="f-room" placeholder="Room number or EXT"></div>
+    <div class="form-row"><label>Guest name</label><input type="text" id="f-name" placeholder="e.g. SMITH"></div>
+    <div class="form-row"><label>Adults</label><input type="number" id="f-adults" min="0" max="20" value="2"></div>
+    <div class="form-row"><label>Type</label>
+      <select id="f-pkg">
+        <option value="HB">HB — Half Board (included)</option>
+        <option value="FB">FB — Full Board (included)</option>
+        <option value="BB">BB — Bed &amp; Breakfast (included)</option>
+        <option value="AI">AI — All Inclusive (included)</option>
+        <option value="EXT">External — Pay EUR 35/person</option>
+      </select>
+    </div>
+    <div class="form-row"><label>Allergy / note</label><input type="text" id="f-allergy" placeholder="Optional"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('add-modal')">Cancel</button>
+      <button class="btn-save" onclick="addRoom()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-bg" id="edit-modal">
+  <div class="modal">
+    <h3>&#9998; Edit <span id="edit-room-lbl" style="color:var(--gold);font-family:'DM Mono',monospace;"></span></h3>
+    <div class="form-row"><label>Guest name</label><input type="text" id="e-name"></div>
+    <div class="form-row"><label>Adults</label><input type="number" id="e-adults" min="0" max="20"></div>
+    <div class="form-row"><label>Type</label>
+      <select id="e-pkg">
+        <option value="HB">HB — Half Board</option>
+        <option value="FB">FB — Full Board</option>
+        <option value="BB">BB — Bed &amp; Breakfast</option>
+        <option value="AI">AI — All Inclusive</option>
+        <option value="EXT">External — EUR 35/person</option>
+      </select>
+    </div>
+    <div class="form-row"><label>Allergy / note</label><input type="text" id="e-allergy"></div>
+    <div class="danger-zone">
+      <div class="danger-title">&#9888; Danger zone</div>
+      <div class="danger-sub">Undo check-in or payment.</div>
+      <div class="danger-btns" id="danger-btns"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('edit-modal')">Cancel</button>
+      <button class="btn-save" onclick="saveEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TODAY = new Date().toISOString().split('T')[0];
+const LS_HISTORY = 'wr_breakfast_history';
+const FB_PATH = 'breakfast/' + TODAY;
+const EXT_PRICE = 35;
+
+let guests=[], filterMode=null, editIdx=null, importedRooms=[];
+let fbConnected=false, saveDebounce=null;
+
+function pad(n){return String(n).padStart(2,'0');}
+function nowTime(){const d=new Date();return pad(d.getHours())+':'+pad(d.getMinutes());}
+
+// ══════════════════════════════════════════════
+// FIREBASE SYNC
+// ══════════════════════════════════════════════
+function initFirebase(){
+  if(!window._fbReady){ document.addEventListener('firebase-ready', initFirebase); return; }
+  fbConnected=true;
+  setSyncBadge('connecting','Connecting...');
+  window._fbListen(FB_PATH, (data)=>{
+    if(data && Array.isArray(data.guests)) guests=data.guests;
+    render();renderReport(guests);
+    setSyncBadge('live','● Live sync');
+  });
+}
+
+function setSyncBadge(state, msg){
+  const b=document.getElementById('autosave-badge');
+  b.textContent=msg;
+  b.style.color=state==='live'?'var(--green)':state==='saving'?'var(--amber)':state==='err'?'var(--red)':'var(--muted)';
+  b.classList.add('show');
+}
+
+function pushToFirebase(){
+  if(!fbConnected) return;
+  clearTimeout(saveDebounce);
+  saveDebounce=setTimeout(()=>{
+    setSyncBadge('saving','↑ Saving...');
+    window._fbSet(FB_PATH,{guests:guests,updatedAt:nowTime()})
+      .then(()=>setSyncBadge('live','● Live sync'))
+      .catch(()=>setSyncBadge('err','● Save error'));
+  },800);
+}
+
+function saveToday(silent){
+  const h=getHistory();
+  h[TODAY]={date:TODAY,savedAt:nowTime(),guests:JSON.parse(JSON.stringify(guests))};
+  localStorage.setItem(LS_HISTORY,JSON.stringify(h));
+  if(!silent){
+    const b=document.getElementById('autosave-badge');
+    b.textContent='✓ History saved '+nowTime();b.style.color='var(--green)';b.classList.add('show');
+    setTimeout(()=>setSyncBadge('live','● Live sync'),3000);
+  }
+}
+function getHistory(){try{return JSON.parse(localStorage.getItem(LS_HISTORY)||'{}');}catch(e){return {};}}
+
+function init(){
+  render();renderReport(guests);renderHistory();
+  initFirebase();
+  startAutoSave();
+}
+
+function startAutoSave(){
+  setInterval(()=>{
+    const d=new Date();
+    if(d.getHours()===10&&d.getMinutes()===30) saveToday(false);
+  },60000);
+}
+
+// ══════════════════════════════════════════════
+// CLOCK
+// ══════════════════════════════════════════════
+function tick(){
+  const d=new Date();
+  document.getElementById('live-date').textContent=d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  document.getElementById('live-time').textContent=pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+}
+setInterval(tick,1000);tick();
+
+// ══════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════
+function showTab(name,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+  document.getElementById('fabs').style.display=name==='board'?'flex':'none';
+  if(name==='report')renderReport(guests);
+  if(name==='history')renderHistory();
+}
+function toggleFilter(m){
+  filterMode=filterMode===m?null:m;
+  ['pending','arrived','ext'].forEach(x=>document.getElementById('f-'+x).classList.toggle('active',filterMode===x));
+  render();
+}
+
+// ══════════════════════════════════════════════
+// RENDER BOARD
+// ══════════════════════════════════════════════
+function render(){
+  const q=document.getElementById('search-input').value.trim().toLowerCase();
+  const list=guests.filter(g=>{
+    if(q&&!g.room.includes(q)&&!g.name.toLowerCase().includes(q))return false;
+    if(filterMode==='pending')return !g.arrived;
+    if(filterMode==='arrived')return g.arrived;
+    if(filterMode==='ext')return g.pkg==='EXT';
+    return true;
+  }).sort((a,b)=>a.room.localeCompare(b.room,undefined,{numeric:true}));
+
+  const arrived=guests.filter(g=>g.arrived);
+  const pending=guests.filter(g=>!g.arrived);
+  const served=arrived.reduce((s,g)=>s+(Number(g.adults)||0),0);
+  const pct=guests.length?Math.round((arrived.length/guests.length)*100):0;
+
+  document.getElementById('s-total').textContent=guests.length;
+  document.getElementById('s-arrived').textContent=arrived.length;
+  document.getElementById('s-pending').textContent=pending.length;
+  document.getElementById('s-guests').textContent=served;
+  document.getElementById('rem-count').textContent=pending.length;
+  document.getElementById('rem-sub').textContent=pending.length===0?'All rooms accounted for!':pending.length+' room'+(pending.length>1?'s':'')+' expected';
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('prog-pct').textContent=pct+'% attended';
+
+  const el=document.getElementById('board-list');
+  if(!list.length){el.innerHTML='<div class="empty">No guests yet. Import the PDF or add manually.</div>';return;}
+
+  el.innerHTML=list.map(g=>{
+    const i=guests.indexOf(g);
+    const isExt=g.pkg==='EXT';
+    const hasA=g.allergy&&g.allergy.length>0;
+    const adults=Number(g.adults)||0;
+
+    let cls='room-card';
+    if(hasA&&!g.arrived)cls+=' has-allergy';
+    else if(g.arrived)cls+=' is-arrived';
+    else if(isExt&&!g.paidExt)cls+=' is-external';
+
+    let badge;
+    if(isExt&&!g.paidExt)badge='<span class="status-badge external">&#9888; External</span>';
+    else if(g.arrived)badge='<span class="status-badge arrived"><span class="dot green"></span> Arrived</span>';
+    else badge='<span class="status-badge pending"><span class="dot amber"></span> Pending</span>';
+
+    let btns;
+    if(isExt&&!g.paidExt){
+      btns=`<div class="btn-row">
+        <button class="btn-ext" onclick="act('extPay',${i})">Pay EUR${EXT_PRICE*adults} &amp; Enter</button>
+      </div>`;
+    } else if(g.arrived){
+      const uExt=g.paidExt?`<button class="btn-undo" onclick="act('undoExtPay',${i})">Undo EUR${EXT_PRICE*adults}</button>`:'';
+      btns=`<div class="btn-row"><button class="btn-undo" onclick="act('undoArrival',${i})">Undo check-in</button>${uExt}</div>`;
+    } else if(isExt&&g.paidExt){
+      btns=`<div class="btn-row">
+        <button class="btn-checkin" onclick="act('checkIn',${i})">Check in</button>
+        <button class="btn-undo" onclick="act('undoExtPay',${i})">Undo EUR${EXT_PRICE*adults}</button>
+      </div>`;
+    } else {
+      btns=`<div class="btn-row"><button class="btn-checkin" onclick="act('checkIn',${i})">Check in</button></div>`;
+    }
+
+    const pkgCls=isExt?'pkg-badge external':'pkg-badge';
+    const aTag=hasA?`<div class="tag allergy">&#9888; ${g.allergy}</div>`:'';
+    const extTag=g.paidExt?`<div class="tag paid-ext">&#9728; Paid EUR${EXT_PRICE*adults}</div>`:'';
+    const time=g.arrived&&g.arrivalTime?`<span class="arr-time">${g.arrivalTime}</span>`:'';
+
+    return `<div class="${cls}"><div class="card-main">
+      <div class="room-num">${g.room}</div>
+      <div class="guest-info">
+        <div class="name-row"><div class="guest-name">${g.name}</div><button class="btn-edit" onclick="openEdit(${i})">&#9998;</button></div>
+        <div class="guest-meta">
+          <span class="${pkgCls}">${g.pkg}</span>
+          <span class="guest-count">${adults>0?adults+' adult'+(adults>1?'s':''):''}</span>
+          ${time}
+        </div>
+        ${aTag}${extTag}
+      </div>
+      <div class="card-actions">${badge}${btns}</div>
+    </div></div>`;
+  }).join('');
+
+  pushToFirebase();
+}
+
+// ══════════════════════════════════════════════
+// ACTIONS
+// ══════════════════════════════════════════════
+function act(action,i){
+  const g=guests[i],adults=Number(g.adults)||0,cost=EXT_PRICE*adults;
+  if(action==='checkIn'){guests[i].arrived=true;guests[i].arrivalTime=nowTime();}
+  else if(action==='undoArrival'){guests[i].arrived=false;guests[i].arrivalTime='';}
+  else if(action==='extPay'){
+    if(!confirm(`Confirm external breakfast charge\nRoom ${g.room} - ${g.name}\n${adults} x EUR${EXT_PRICE} = EUR${cost}`))return;
+    guests[i].paidExt=true;
+  }
+  else if(action==='undoExtPay'){
+    if(!confirm(`Remove external charge for ${g.name}?`))return;
+    guests[i].paidExt=false;
+    guests[i].arrived=false;
+    guests[i].arrivalTime='';
+  }
+  render();
+}
+
+// ══════════════════════════════════════════════
+// REPORT
+// ══════════════════════════════════════════════
+function buildReportHTML(data, dateLabel){
+  const arrived=data.filter(g=>g.arrived).sort((a,b)=>(a.arrivalTime||'').localeCompare(b.arrivalTime||''));
+  const pending=data.filter(g=>!g.arrived);
+  const served=arrived.reduce((s,g)=>s+(Number(g.adults)||0),0);
+  const rate=data.length?Math.round((arrived.length/data.length)*100):0;
+  const paidExtList=data.filter(g=>g.paidExt);
+  const extRev=paidExtList.reduce((s,g)=>s+(Number(g.adults)||0)*EXT_PRICE,0);
+  const al=data.filter(g=>g.allergy&&g.allergy.length>0);
+
+  const slots=['07:00','07:30','08:00','08:30','09:00','09:30','10:00','10:30','11:00'];
+  const counts=slots.map(s=>{
+    const [h,m]=s.split(':').map(Number);
+    return arrived.filter(g=>{
+      if(!g.arrivalTime)return false;
+      const [gh,gm]=g.arrivalTime.split(':').map(Number);
+      const t=gh*60+gm,st=h*60+m;
+      return t>=st&&t<st+30;
+    }).length;
+  });
+  const maxC=Math.max(...counts,1);
+  const first=arrived[0]?.arrivalTime||'-',last=arrived[arrived.length-1]?.arrivalTime||'-';
+  const avg=arrived.length?(served/arrived.length).toFixed(1):'-';
+
+  return `
+    <div class="report-top">
+      <div><div class="report-title">&#9728; Breakfast Report</div><div class="report-sub">${dateLabel}</div></div>
+      <button class="export-btn" onclick='exportData(${JSON.stringify(data).replace(/'/g,"&#39;")}, "${dateLabel}")'>&#8659; Export</button>
+    </div>
+    <div class="stats-row" style="padding:0 0 16px;">
+      <div class="stat-card"><div class="stat-label">Total rooms</div><div class="stat-value">${data.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Arrived</div><div class="stat-value green">${arrived.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Rate</div><div class="stat-value gold">${rate}%</div></div>
+      <div class="stat-card"><div class="stat-label">Guests served</div><div class="stat-value">${served}</div></div>
+    </div>
+    <div class="report-section">
+      <div class="section-title green-sec">&#128176; Revenue — External guests</div>
+      <div class="rev-cards">
+        <div class="rev-card ext-c">
+          <div class="rev-lbl">External Breakfast Charges</div>
+          <div class="rev-amt">EUR ${extRev}</div>
+          <div class="rev-sub">${paidExtList.length} external guest${paidExtList.length!==1?'s':''} &middot; EUR${EXT_PRICE}/person</div>
+        </div>
+      </div>
+    </div>
+    <div class="report-section">
+      <div class="section-title">Arrival wave — 30-min slots</div>
+      <div class="wave-outer">
+        <div class="wave-bars">${counts.map((c,i)=>'<div class="wave-bar" style="height:'+Math.max(4,Math.round((c/maxC)*76))+'px;"><div class="wave-tip">'+slots[i]+': '+c+' room'+(c!==1?'s':'')+'</div></div>').join('')}</div>
+        <div class="wave-lbls">${slots.map(s=>'<div class="wave-lbl">'+s+'</div>').join('')}</div>
+      </div>
+    </div>
+    <div class="report-section">
+      <div class="section-title">Arrival timeline</div>
+      <div class="timeline">
+        ${arrived.length?arrived.map(g=>{const a=Number(g.adults)||0;return'<div class="tl-item"><span class="tl-time">'+g.arrivalTime+'</span><span class="tl-room">'+g.room+'</span><span class="tl-name">'+g.name+'</span>'+(g.paidExt?'<span class="tl-tag ext">EXT +EUR'+(a*EXT_PRICE)+'</span>':'')+'<span style="font-size:11px;color:var(--muted);">'+a+' pax</span></div>';}).join(''):'<div style="color:var(--muted);font-size:13px;padding:6px 0;">No arrivals yet.</div>'}
+      </div>
+    </div>
+    <div class="report-section">
+      <div class="section-title">Statistics</div>
+      <div class="sum-row"><span class="sum-key">Total rooms</span><span class="sum-val">${data.length}</span></div>
+      <div class="sum-row"><span class="sum-key">Rooms arrived</span><span class="sum-val green">${arrived.length}</span></div>
+      <div class="sum-row"><span class="sum-key">Not yet arrived</span><span class="sum-val amber">${pending.length}</span></div>
+      <div class="sum-row"><span class="sum-key">External paying guests</span><span class="sum-val gold">${paidExtList.length}</span></div>
+      <div class="sum-row"><span class="sum-key">Total guests served</span><span class="sum-val blue">${served}</span></div>
+      <div class="sum-row"><span class="sum-key">Avg pax per room</span><span class="sum-val">${avg}</span></div>
+      <div class="sum-row"><span class="sum-key">First arrival</span><span class="sum-val">${first}</span></div>
+      <div class="sum-row"><span class="sum-key">Last arrival</span><span class="sum-val">${last}</span></div>
+      <div class="sum-row"><span class="sum-key">Attendance rate</span><span class="sum-val ${rate>=80?'green':rate>=60?'amber':'red'}">${rate}%</span></div>
+    </div>
+    ${al.length?`<div class="report-section"><div class="section-title">Allergy &amp; dietary notes</div>${al.map(g=>'<div class="sum-row"><span class="sum-key">Room '+g.room+' - '+g.name+'</span><span class="sum-val red" style="font-size:11px;max-width:55%;text-align:right;">'+g.allergy+'</span></div>').join('')}</div>`:''}
+    ${pending.length?`<div class="report-section"><div class="section-title">Not yet arrived</div>${pending.map(g=>'<div class="sum-row"><span class="sum-key">Room '+g.room+' - '+g.name+'</span><span class="sum-val" style="font-size:12px;color:var(--muted);">'+Number(g.adults)+' adult'+(Number(g.adults)>1?'s':'')+'</span></div>').join('')}</div>`:''}
+  `;
+}
+
+function renderReport(data){
+  const dateLabel='Today — '+new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('report-content').innerHTML=buildReportHTML(data,dateLabel);
+}
+
+// ══════════════════════════════════════════════
+// HISTORY
+// ══════════════════════════════════════════════
+function renderHistory(){
+  const history=getHistory();
+  const dates=Object.keys(history).sort().reverse();
+  const el=document.getElementById('history-list');
+  if(!dates.length){
+    el.innerHTML='<div class="history-empty">&#9728; No saved days yet.<br><br>Data is automatically saved at 10:30 each morning.<br>You can also save manually.</div>';
+    return;
+  }
+  el.innerHTML=dates.map(date=>{
+    const entry=history[date];
+    const data=entry.guests;
+    const arrived=data.filter(g=>g.arrived);
+    const rate=data.length?Math.round((arrived.length/data.length)*100):0;
+    const extRev=data.filter(g=>g.paidExt).reduce((s,g)=>s+(Number(g.adults)||0)*EXT_PRICE,0);
+    const dateObj=new Date(date+'T12:00:00');
+    const dateLabel=dateObj.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+    return `<div class="history-card" id="hcard-${date}">
+      <div class="history-card-header" onclick="toggleHistoryCard('${date}')">
+        <div>
+          <div class="history-date">${dateLabel}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">Saved at ${entry.savedAt}</div>
+        </div>
+        <div class="history-meta">
+          <div class="history-stat">Arrived <span>${arrived.length}/${data.length}</span></div>
+          <div class="history-stat">Rate <span style="color:${rate>=80?'var(--green)':rate>=60?'var(--amber)':'var(--red)'}">${rate}%</span></div>
+          <div class="history-stat">Ext. Rev <span style="color:var(--gold)">EUR ${extRev}</span></div>
+          <span class="history-chevron">&#9656;</span>
+        </div>
+      </div>
+      <div class="history-detail">
+        <div>${buildReportHTML(data,dateLabel)}</div>
+        <div class="history-action-row">
+          <button class="btn-export-day" onclick="exportHistoryDay('${date}')">&#8659; Export .txt</button>
+          <button class="btn-delete-day" onclick="deleteHistoryDay('${date}')">&#128465; Delete</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleHistoryCard(date){document.getElementById('hcard-'+date).classList.toggle('expanded');}
+function deleteHistoryDay(date){
+  if(!confirm('Delete saved data for '+date+'?'))return;
+  const h=getHistory();delete h[date];
+  localStorage.setItem(LS_HISTORY,JSON.stringify(h));renderHistory();
+}
+function exportHistoryDay(date){
+  const h=getHistory();const entry=h[date];if(!entry)return;
+  const dateObj=new Date(date+'T12:00:00');
+  exportData(entry.guests,dateObj.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'}),date);
+}
+
+// ══════════════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════════════
+function exportData(data,dateLabel,filename){
+  if(typeof data==='string')data=JSON.parse(data);
+  const arrived=data.filter(g=>g.arrived).sort((a,b)=>(a.arrivalTime||'').localeCompare(b.arrivalTime||''));
+  const pending=data.filter(g=>!g.arrived);
+  const allergies=data.filter(g=>g.allergy&&g.allergy.length>0);
+  const served=arrived.reduce((s,g)=>s+(Number(g.adults)||0),0);
+  const rate=data.length?Math.round((arrived.length/data.length)*100):0;
+  const paidExtList=data.filter(g=>g.paidExt);
+  const extRev=paidExtList.reduce((s,g)=>s+(Number(g.adults)||0)*EXT_PRICE,0);
+  let t='WHITE ROCKS HOTEL\nBREAKFAST BUFFET - MANAGER REPORT\n'+dateLabel+'\nGenerated: '+new Date().toLocaleString('en-GB')+'\n\nSUMMARY\nRooms: '+data.length+' | Arrived: '+arrived.length+' | Absent: '+pending.length+'\nGuests served: '+served+' | Attendance: '+rate+'%\nExternal charges: EUR '+extRev+' ('+paidExtList.length+' guests)\n\nARRIVAL TIMELINE\n';
+  t+=arrived.length?arrived.map(g=>{const a=Number(g.adults)||0;return g.arrivalTime+'  Room '+g.room+'  '+g.name+'  '+a+' pax'+(g.paidExt?' [EXT +EUR'+(a*EXT_PRICE)+']':'');}).join('\n'):'None.';
+  t+='\n\nNOT ARRIVED\n'+(pending.length?pending.map(g=>'Room '+g.room+'  '+g.name+'  '+g.adults+' adults').join('\n'):'All attended.');
+  t+='\n\nEXTERNAL PAYING GUESTS\n'+(paidExtList.length?paidExtList.map(g=>'Room '+g.room+'  '+g.name+'  '+g.adults+' adults  EUR '+(Number(g.adults)*EXT_PRICE)).join('\n'):'None.');
+  t+='\n\nALLERGIES\n'+(allergies.length?allergies.map(g=>'Room '+g.room+'  '+g.name+': '+g.allergy).join('\n'):'None.');
+  const blob=new Blob([t],{type:'text/plain'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='breakfast-report-'+(filename||TODAY)+'.txt';a.click();
+}
+
+// ══════════════════════════════════════════════
+// MODALS
+// ══════════════════════════════════════════════
+function openAddModal(){document.getElementById('add-modal').classList.add('open');document.getElementById('f-room').focus();}
+function addRoom(){
+  const room=document.getElementById('f-room').value.trim()||'EXT';
+  const name=document.getElementById('f-name').value.trim().toUpperCase();
+  const adults=parseInt(document.getElementById('f-adults').value)||1;
+  const pkg=document.getElementById('f-pkg').value;
+  const allergy=document.getElementById('f-allergy').value.trim();
+  if(!name){alert('Please enter guest name.');return;}
+  guests.push({room,name,adults,pkg,allergy,arrived:false,arrivalTime:'',paidExt:false});
+  closeModal('add-modal');render();
+}
+function openEdit(i){
+  editIdx=i;const g=guests[i];
+  document.getElementById('edit-room-lbl').textContent=g.room;
+  document.getElementById('e-name').value=g.name;
+  document.getElementById('e-adults').value=g.adults;
+  document.getElementById('e-pkg').value=g.pkg||'HB';
+  document.getElementById('e-allergy').value=g.allergy||'';
+  const db=document.getElementById('danger-btns');let html='';
+  if(g.arrived)html+='<button class="btn-danger" onclick="dangerAct(\'arrival\','+i+')">Undo check-in</button>';
+  if(g.paidExt)html+='<button class="btn-danger" onclick="dangerAct(\'extpay\','+i+')">Undo External payment</button>';
+  html+='<button class="btn-danger" style="background:var(--red-bg);border-color:var(--red);color:var(--red);font-weight:700;" onclick="dangerAct(\'delete\','+i+')">&#128465; Delete Room</button>';
+  db.innerHTML=html;
+  document.getElementById('edit-modal').classList.add('open');
+}
+function saveEdit(){
+  if(editIdx===null)return;
+  const newName=document.getElementById('e-name').value.trim().toUpperCase();
+  const newAdults=parseInt(document.getElementById('e-adults').value)||1;
+  const newPkg=document.getElementById('e-pkg').value;
+  const newAllergy=document.getElementById('e-allergy').value.trim();
+  if(!newName){alert('Guest name cannot be empty.');return;}
+  guests[editIdx].name=newName;guests[editIdx].adults=newAdults;guests[editIdx].pkg=newPkg;guests[editIdx].allergy=newAllergy;
+  closeModal('edit-modal');render();
+}
+function dangerAct(action,i){
+  if(!confirm('Are you sure?'))return;
+  if(action==='arrival'){guests[i].arrived=false;guests[i].arrivalTime='';}
+  else if(action==='extpay'){guests[i].paidExt=false;guests[i].arrived=false;guests[i].arrivalTime='';}
+  else if(action==='delete'){guests.splice(i,1);closeModal('edit-modal');render();return;}
+  closeModal('edit-modal');render();
+}
+function closeModal(id){
+  document.getElementById(id).classList.remove('open');
+  if(id==='add-modal'){['f-room','f-name','f-allergy'].forEach(x=>document.getElementById(x).value='');document.getElementById('f-adults').value=2;}
+}
+['add-modal','edit-modal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal(id);});
+});
+
+// ══════════════════════════════════════════════
+// IMPORT PDF
+// ══════════════════════════════════════════════
+function dropOver(e){e.preventDefault();document.getElementById('drop-zone').classList.add('drag-over');}
+function dropLeave(e){document.getElementById('drop-zone').classList.remove('drag-over');}
+function dropFile(e){e.preventDefault();document.getElementById('drop-zone').classList.remove('drag-over');const f=e.dataTransfer.files[0];if(f)processFile(f);}
+function handleFile(e){const f=e.target.files[0];if(f)processFile(f);e.target.value='';}
+
+function processFile(file){
+  const titleEl=document.getElementById('import-result-title');
+  const previewEl=document.getElementById('import-preview');
+  document.getElementById('import-result').classList.add('show');
+  titleEl.textContent='Reading '+file.name+'...';
+  previewEl.innerHTML='<div style="color:var(--muted);padding:20px;text-align:center;">&#9203; Processing...</div>';
+  if(file.name.endsWith('.pdf')){
+    const reader=new FileReader();
+    reader.onload=async function(e){await extractTextFromPDF(e.target.result,file.name);};
+    reader.readAsArrayBuffer(file);
+  } else {
+    const reader=new FileReader();
+    reader.onload=function(e){parseProtelText(e.target.result,file.name);};
+    reader.readAsText(file);
+  }
+}
+
+async function extractTextFromPDF(buffer,filename){
+  try{
+    const pdf=await pdfjsLib.getDocument({data:buffer}).promise;
+    let fullText='';
+    for(let p=1;p<=pdf.numPages;p++){
+      const page=await pdf.getPage(p);
+      const content=await page.getTextContent();
+      const items=content.items.slice().sort((a,b)=>{
+        const yDiff=Math.round(b.transform[5])-Math.round(a.transform[5]);
+        if(Math.abs(yDiff)>3)return yDiff;
+        return a.transform[4]-b.transform[4];
+      });
+      let lastY=null;
+      for(const item of items){
+        const y=Math.round(item.transform[5]);
+        if(lastY!==null&&Math.abs(y-lastY)>3)fullText+='\n';
+        fullText+=item.str+' ';lastY=y;
+      }
+      fullText+='\n';
+    }
+    parseProtelText(fullText,filename);
+  }catch(e){document.getElementById('import-result-title').textContent='Error reading PDF: '+e.message;}
+}
+
+function parseProtelText(text,filename){
+  const lines=text.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
+  const rooms=[];
+  let pendingAllergy='';
+  const allergyKeywords=['GLUTEN','LACTOSE','DIABETIC','ALLERG','INTOLERANT','VEGAN','VEGETARIAN','HALAL','KOSHER','NUT','DAIRY','CELIAC'];
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i];
+    const isAllergyLine=allergyKeywords.some(k=>line.toUpperCase().includes(k));
+    const startsWithRoom=/^\d{3}/.test(line);
+    if(isAllergyLine&&!startsWithRoom){pendingAllergy=(pendingAllergy?pendingAllergy+' · ':'')+line.trim();continue;}
+    const roomMatch=line.match(/^(\d{3})\s+/);if(!roomMatch)continue;
+    const room=roomMatch[1];const rest=line.slice(roomMatch[0].length);
+    const pkgMatch=rest.match(/\b(HB|BB|FB|AI)\b/);const pkg=pkgMatch?pkgMatch[1]:'HB';
+    const nameTokens=rest.split(/\s+/).filter(t=>{if(['HB','BB','FB','AI'].includes(t))return false;if(/^\d/.test(t))return false;if(t.length<2)return false;if(/^[A-Z][A-Z\-]+$/.test(t)||/^[A-Z]+$/.test(t))return true;return false;});
+    const name=nameTokens.slice(0,3).join(' ');if(!name)continue;
+    const adultsMatch=rest.match(/\b([1-9])\s+0\s+0/);const adults=adultsMatch?parseInt(adultsMatch[1]):2;
+    const allergy=pendingAllergy||'';pendingAllergy='';
+    // All rooms have breakfast — no exclusions
+    rooms.push({room,name,adults,pkg:pkg||'HB',allergy,arrived:false,arrivalTime:'',paidExt:false});
+  }
+  showImportPreview(rooms,filename);
+}
+
+function showImportPreview(rooms,filename){
+  importedRooms=rooms;
+  const titleEl=document.getElementById('import-result-title');
+  const previewEl=document.getElementById('import-preview');
+  const logEl=document.getElementById('import-log');
+  if(!rooms.length){titleEl.textContent='Could not parse rooms. Please check the file.';previewEl.innerHTML='';return;}
+  const allergies=rooms.filter(r=>r.allergy).length;
+  titleEl.textContent='Found '+rooms.length+' rooms'+(allergies?' · '+allergies+' allergy notes':'');
+  previewEl.innerHTML=rooms.map(r=>`<div class="preview-row"><span class="preview-room">${r.room}</span><span style="flex:1;font-weight:500;">${r.name}</span><span class="preview-pkg">${r.pkg}</span><span style="font-size:12px;color:var(--muted);">${r.adults} adults</span>${r.allergy?'<span class="preview-allergy">⚠ '+r.allergy+'</span>':''}</div>`).join('');
+  logEl.innerHTML='&#9432; This will <strong>replace</strong> today\'s list. Current data will be saved to History first.';
+}
+function cancelImport(){importedRooms=[];document.getElementById('import-result').classList.remove('show');}
+function confirmImport(){
+  if(!importedRooms.length){alert('No rooms to import.');return;}
+  if(!confirm('Replace today\'s board with '+importedRooms.length+' rooms?\n\nCurrent data will be saved to History first.'))return;
+  saveToday(true);
+  guests=importedRooms.map(r=>({...r}));
+  pushToFirebase();
+  cancelImport();render();renderReport(guests);
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelector('.tab').classList.add('active');
+  document.getElementById('panel-board').classList.add('active');
+  document.getElementById('fabs').style.display='flex';
+  const badge=document.getElementById('autosave-badge');
+  badge.textContent='✓ '+importedRooms.length+' rooms imported!';
+  badge.classList.add('show');setTimeout(()=>badge.classList.remove('show'),4000);
+  importedRooms=[];
+}
+
+init();
+</script>
+</body>
+</html>
