@@ -471,7 +471,7 @@ if(sessionStorage.getItem('wr_auth')==='1'){
 
 const TODAY = new Date().toISOString().split('T')[0];
 const LS_HISTORY = 'wr_breakfast_history';
-const FB_PATH = 'breakfast/' + TODAY;
+const FB_PATH = 'breakfast/current'; // Stable path — only changes on import
 const EXT_PRICE = 35;
 
 let guests=[], filterMode=null, editIdx=null, importedRooms=[];
