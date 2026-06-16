@@ -303,7 +303,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="history-wrap">
     <div class="history-header">
       <div class="history-title">&#128197; History</div>
-      <button class="btn-save" style="flex:unset;padding:8px 14px;font-size:12px;background:var(--gold);border:none;border-radius:var(--radius);color:#fff;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;" onclick="saveToday()">&#128190; Save Today Now</button>
+      <div style="display:flex;gap:8px;">
+        <button onclick="exportAllJSON()" style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:8px 12px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;">&#8659; JSON (All)</button>
+        <button class="btn-save" style="flex:unset;padding:8px 14px;font-size:12px;background:var(--gold);border:none;border-radius:var(--radius);color:#fff;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;" onclick="saveToday()">&#128190; Save Now</button>
+      </div>
     </div>
     <div class="history-list" id="history-list"></div>
   </div>
@@ -850,12 +853,90 @@ function renderHistory(){
       <div class="history-detail">
         <div>${buildReportHTML(data,dateLabel)}</div>
         <div class="history-action-row">
-          <button class="btn-export-day" onclick="exportHistoryDay('${date}')">&#8659; Export .txt</button>
+          <button class="btn-export-day" onclick="exportHistoryDay('${date}')">&#8659; .txt</button>
+          <button class="btn-export-day" onclick="exportDayJSON('${date}')">&#8659; JSON</button>
           <button class="btn-delete-day" onclick="deleteHistoryDay('${date}')">&#128465; Delete</button>
         </div>
       </div>
     </div>`;
   }).join('');
+}
+
+function exportAllJSON(){
+  const history=getHistory();
+  const dates=Object.keys(history).sort();
+  if(!dates.length){alert('No history data to export.');return;}
+
+  const exportData={
+    hotel:'White Rocks Hotel & Bungalows',
+    type:'breakfast',
+    exportedAt:new Date().toISOString(),
+    totalDays:dates.length,
+    days:dates.map(date=>{
+      const entry=history[date];
+      const data=entry.guests||[];
+      const arrived=data.filter(g=>g.arrived);
+      const extRev=data.filter(g=>g.paidExt).reduce((s,g)=>s+(Number(g.adults)||0)*EXT_PRICE,0);
+      return {
+        date,
+        savedAt:entry.savedAt,
+        manual:entry.manual||false,
+        summary:{
+          totalRooms:data.length,
+          arrivedRooms:arrived.length,
+          occupancyPct:data.length?Math.round(arrived.length/data.length*100):0,
+          guestsServed:arrived.reduce((s,g)=>s+(Number(g.adults)||0),0),
+          externalPaid:data.filter(g=>g.paidExt).length,
+          externalRevenue:extRev
+        },
+        rooms:data.map(g=>({
+          room:g.room,
+          name:g.name,
+          adults:g.adults,
+          pkg:g.pkg,
+          allergy:g.allergy||'',
+          arrived:g.arrived,
+          arrivalTime:g.arrivalTime||'',
+          paidExt:g.paidExt||false
+        }))
+      };
+    })
+  };
+
+  const blob=new Blob([JSON.stringify(exportData,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='white-rocks-breakfast-history.json';
+  a.click();
+}
+
+function exportDayJSON(date){
+  const history=getHistory();
+  const entry=history[date];
+  if(!entry){alert('No data for '+date);return;}
+  const data=entry.guests||[];
+  const arrived=data.filter(g=>g.arrived);
+  const extRev=data.filter(g=>g.paidExt).reduce((s,g)=>s+(Number(g.adults)||0)*EXT_PRICE,0);
+  const exportData={
+    hotel:'White Rocks Hotel & Bungalows',
+    type:'breakfast',
+    date,
+    savedAt:entry.savedAt,
+    manual:entry.manual||false,
+    summary:{
+      totalRooms:data.length,
+      arrivedRooms:arrived.length,
+      occupancyPct:data.length?Math.round(arrived.length/data.length*100):0,
+      guestsServed:arrived.reduce((s,g)=>s+(Number(g.adults)||0),0),
+      externalPaid:data.filter(g=>g.paidExt).length,
+      externalRevenue:extRev
+    },
+    rooms:data.map(g=>({room:g.room,name:g.name,adults:g.adults,pkg:g.pkg,allergy:g.allergy||'',arrived:g.arrived,arrivalTime:g.arrivalTime||'',paidExt:g.paidExt||false}))
+  };
+  const blob=new Blob([JSON.stringify(exportData,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`breakfast-${date}.json`;a.click();
 }
 
 function toggleHistoryCard(date){document.getElementById('hcard-'+date).classList.toggle('expanded');}
@@ -1456,6 +1537,57 @@ function renderManualStats(){
   new Chart(document.getElementById('manual-chart-rev'),{type:'bar',data:{labels,datasets:[{label:'Revenue (€)',data:entries.map(e=>e.extrev),backgroundColor:'rgba(52,211,153,0.3)',borderColor:'#34d399',borderWidth:2,borderRadius:6}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'}},y:{grid:{color:'rgba(255,255,255,0.04)'},beginAtZero:true,ticks:{callback:v=>'€'+v}}}}});
   new Chart(document.getElementById('manual-chart-occ'),{type:'line',data:{labels,datasets:[{label:'Occupancy %',data:entries.map(e=>e.total?Math.round(e.arrived/e.total*100):0),borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.1)',borderWidth:2,pointBackgroundColor:'#f59e0b',pointRadius:4,fill:true,tension:0.3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'}},y:{grid:{color:'rgba(255,255,255,0.04)'},beginAtZero:true,max:100,ticks:{callback:v=>v+'%'}}}}});
   document.getElementById('manual-print-btn').style.display='block';
+}
+
+// ══════════════════════════════════════════════
+// CHR PARSER — exact field positions
+// ══════════════════════════════════════════════
+function parseCHR(text, filename){
+  const rooms=[];
+  const lines=text.split('\n').filter(l=>l.trim().length>0);
+
+  for(const line of lines){
+    const fields=[];
+    let cur='', inQ=false;
+    for(let i=0;i<line.length;i++){
+      const ch=line[i];
+      if(ch==='"'){inQ=!inQ;}
+      else if(ch===','&&!inQ){fields.push(cur.trim());cur='';}
+      else cur+=ch;
+    }
+    fields.push(cur.trim());
+
+    if(fields.length<55) continue;
+
+    // Verified exact positions from allowance.chr:
+    // [36]=ROOM, [38]=PKG, [39]=GUEST, [42]=AD
+    // [48]=BF_AT, [52]=DIN_AT
+    const room=fields[36];
+    if(!/^\d{3}$/.test(room)) continue;
+
+    const pkg=(fields[38]||'').trim();
+    const name=(fields[39]||'').trim();
+    const adults=parseInt(fields[42])||0;
+    const bfAt=parseInt(fields[48])||0;
+
+    if(!name||name==='TOTAL:'||name==='ROOMS'||name==='ADULTS') continue;
+
+    // Use breakfast count for adults if available
+    const pax=bfAt>0?bfAt:adults;
+
+    rooms.push({
+      room,
+      name,
+      adults:pax,
+      pkg:pkg||'HB',
+      allergy:'',
+      arrived:false,
+      arrivalTime:'',
+      paidExt:false
+    });
+  }
+
+  showImportPreview(rooms, filename);
 }
 
 init();
