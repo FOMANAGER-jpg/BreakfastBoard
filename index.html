@@ -345,22 +345,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
   </div>
 </div>
-      <div class="drop-title">Drag &amp; drop το PDF εδώ</div>
-      <div class="drop-sub">ή επίλεξε αρχείο</div>
-      <button class="btn-browse" onclick="event.stopPropagation();document.getElementById('file-input').click()">&#128194; Browse file</button>
-    </div>
-    <input type="file" id="file-input" accept=".pdf,.txt" style="display:none" onchange="handleFile(event)">
-    <div class="import-result" id="import-result">
-      <div class="import-result-title" id="import-result-title"></div>
-      <div class="import-preview" id="import-preview"></div>
-      <div class="import-log" id="import-log"></div>
-      <div class="import-actions">
-        <button class="btn-import-cancel" onclick="cancelImport()">Cancel</button>
-        <button class="btn-import-confirm" onclick="confirmImport()">&#10003; Apply to Live Board</button>
-      </div>
-    </div>
-  </div>
-</div>
 
 <!-- FABS -->
 <div class="fabs" id="fabs">
@@ -648,12 +632,13 @@ function render(){
   const arrived=guests.filter(g=>g.arrived);
   const pending=guests.filter(g=>!g.arrived);
   const served=arrived.reduce((s,g)=>s+(Number(g.adults)||0),0);
+  const totalExpected=guests.reduce((s,g)=>s+(Number(g.adults)||0),0);
   const pct=guests.length?Math.round((arrived.length/guests.length)*100):0;
 
   document.getElementById('s-total').textContent=guests.length;
   document.getElementById('s-arrived').textContent=arrived.length;
   document.getElementById('s-pending').textContent=pending.length;
-  document.getElementById('s-guests').textContent=served;
+  document.getElementById('s-guests').textContent=served+'/'+totalExpected;
   document.getElementById('rem-count').textContent=pending.length;
   document.getElementById('rem-sub').textContent=pending.length===0?'All rooms accounted for!':pending.length+' room'+(pending.length>1?'s':'')+' expected';
   document.getElementById('prog-fill').style.width=pct+'%';
@@ -745,6 +730,7 @@ function buildReportHTML(data, dateLabel){
   const arrived=data.filter(g=>g.arrived).sort((a,b)=>(a.arrivalTime||'').localeCompare(b.arrivalTime||''));
   const pending=data.filter(g=>!g.arrived);
   const served=arrived.reduce((s,g)=>s+(Number(g.adults)||0),0);
+  const totalExpected=data.reduce((s,g)=>s+(Number(g.adults)||0),0);
   const rate=data.length?Math.round((arrived.length/data.length)*100):0;
   const paidExtList=data.filter(g=>g.paidExt);
   const extRev=paidExtList.reduce((s,g)=>s+(Number(g.adults)||0)*EXT_PRICE,0);
@@ -773,7 +759,7 @@ function buildReportHTML(data, dateLabel){
       <div class="stat-card"><div class="stat-label">Total rooms</div><div class="stat-value">${data.length}</div></div>
       <div class="stat-card"><div class="stat-label">Arrived</div><div class="stat-value green">${arrived.length}</div></div>
       <div class="stat-card"><div class="stat-label">Rate</div><div class="stat-value gold">${rate}%</div></div>
-      <div class="stat-card"><div class="stat-label">Guests served</div><div class="stat-value">${served}</div></div>
+      <div class="stat-card"><div class="stat-label">Guests served</div><div class="stat-value">${served}/${totalExpected}</div></div>
     </div>
     <div class="report-section">
       <div class="section-title green-sec">&#128176; Revenue — External guests</div>
@@ -804,7 +790,7 @@ function buildReportHTML(data, dateLabel){
       <div class="sum-row"><span class="sum-key">Rooms arrived</span><span class="sum-val green">${arrived.length}</span></div>
       <div class="sum-row"><span class="sum-key">Not yet arrived</span><span class="sum-val amber">${pending.length}</span></div>
       <div class="sum-row"><span class="sum-key">External paying guests</span><span class="sum-val gold">${paidExtList.length}</span></div>
-      <div class="sum-row"><span class="sum-key">Total guests served</span><span class="sum-val blue">${served}</span></div>
+      <div class="sum-row"><span class="sum-key">Total guests served</span><span class="sum-val blue">${served}/${totalExpected}</span></div>
       <div class="sum-row"><span class="sum-key">Avg pax per room</span><span class="sum-val">${avg}</span></div>
       <div class="sum-row"><span class="sum-key">First arrival</span><span class="sum-val">${first}</span></div>
       <div class="sum-row"><span class="sum-key">Last arrival</span><span class="sum-val">${last}</span></div>
@@ -1538,6 +1524,8 @@ function renderManualStats(){
   const peakCounts={};entries.forEach(e=>{if(e.peak)peakCounts[e.peak]=(peakCounts[e.peak]||0)+1;});
   const topPeak=Object.entries(peakCounts).sort((a,b)=>b[1]-a[1])[0];
   const labels=entries.map(e=>new Date(e.date+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}));
+  const revData=entries.map(e=>e.extrev);
+  const occData=entries.map(e=>e.total?Math.round(e.arrived/e.total*100):0);
 
   document.getElementById('manual-stats-content').innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px;">
@@ -1583,8 +1571,11 @@ function renderManualStats(){
   `;
 
   Chart.defaults.color='#8b90a8';Chart.defaults.borderColor='rgba(255,255,255,0.06)';
-  new Chart(document.getElementById('manual-chart-rev'),{type:'bar',data:{labels,datasets:[{label:'Revenue (€)',data:entries.map(e=>e.extrev),backgroundColor:'rgba(52,211,153,0.3)',borderColor:'#34d399',borderWidth:2,borderRadius:6}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'}},y:{grid:{color:'rgba(255,255,255,0.04)'},beginAtZero:true,ticks:{callback:v=>'€'+v}}}}});
-  new Chart(document.getElementById('manual-chart-occ'),{type:'line',data:{labels,datasets:[{label:'Occupancy %',data:entries.map(e=>e.total?Math.round(e.arrived/e.total*100):0),borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.1)',borderWidth:2,pointBackgroundColor:'#f59e0b',pointRadius:4,fill:true,tension:0.3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'}},y:{grid:{color:'rgba(255,255,255,0.04)'},beginAtZero:true,max:100,ticks:{callback:v=>v+'%'}}}}});
+
+  new Chart(document.getElementById('manual-chart-rev'),{type:'bar',data:{labels,datasets:[{label:'Revenue (€)',data:revData,backgroundColor:'rgba(52,211,153,0.3)',borderColor:'#34d399',borderWidth:2,borderRadius:6}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'}},y:{grid:{color:'rgba(255,255,255,0.04)'},beginAtZero:true,ticks:{callback:v=>'€'+v}}}}});
+
+  new Chart(document.getElementById('manual-chart-occ'),{type:'line',data:{labels,datasets:[{label:'Occupancy %',data:occData,borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.1)',borderWidth:2,pointBackgroundColor:'#f59e0b',pointRadius:4,fill:true,tension:0.3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'}},y:{grid:{color:'rgba(255,255,255,0.04)'},beginAtZero:true,max:100,ticks:{callback:v=>v+'%'}}}}});
+
   document.getElementById('manual-print-btn').style.display='block';
 }
 
