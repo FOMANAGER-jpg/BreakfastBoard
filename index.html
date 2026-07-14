@@ -310,6 +310,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       </div>
     </div>
     <input type="file" id="import-json-input" accept=".json" style="display:none" onchange="importJSONHistory(event)">
+
+    <!-- GUEST SEARCH -->
+    <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:14px;margin-bottom:16px;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700;margin-bottom:10px;">&#128269; Search Guest History</div>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="history-search-input" placeholder="Room number or guest name..." oninput="searchGuestHistory()"
+          style="flex:1;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;">
+        <button onclick="clearHistorySearch()" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;">Clear</button>
+      </div>
+      <div id="history-search-results" style="margin-top:12px;"></div>
+    </div>
+
     <div class="history-list" id="history-list"></div>
   </div>
 </div>
@@ -334,6 +346,22 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <button class="btn-browse" onclick="event.stopPropagation();document.getElementById('file-input').click()">&#128194; Browse file</button>
     </div>
     <input type="file" id="file-input" accept=".pdf,.txt,.chr,.csv" style="display:none" onchange="handleFile(event)">
+    <div class="import-result" id="import-result">
+      <div class="import-result-title" id="import-result-title"></div>
+      <div class="import-preview" id="import-preview"></div>
+      <div class="import-log" id="import-log"></div>
+      <div class="import-actions">
+        <button class="btn-import-cancel" onclick="cancelImport()">Cancel</button>
+        <button class="btn-import-confirm" onclick="confirmImport()">&#10003; Apply to Live Board</button>
+      </div>
+    </div>
+  </div>
+</div>
+      <div class="drop-title">Drag &amp; drop το PDF εδώ</div>
+      <div class="drop-sub">ή επίλεξε αρχείο</div>
+      <button class="btn-browse" onclick="event.stopPropagation();document.getElementById('file-input').click()">&#128194; Browse file</button>
+    </div>
+    <input type="file" id="file-input" accept=".pdf,.txt" style="display:none" onchange="handleFile(event)">
     <div class="import-result" id="import-result">
       <div class="import-result-title" id="import-result-title"></div>
       <div class="import-preview" id="import-preview"></div>
@@ -632,13 +660,12 @@ function render(){
   const arrived=guests.filter(g=>g.arrived);
   const pending=guests.filter(g=>!g.arrived);
   const served=arrived.reduce((s,g)=>s+(Number(g.adults)||0),0);
-  const totalExpected=guests.reduce((s,g)=>s+(Number(g.adults)||0),0);
   const pct=guests.length?Math.round((arrived.length/guests.length)*100):0;
 
   document.getElementById('s-total').textContent=guests.length;
   document.getElementById('s-arrived').textContent=arrived.length;
   document.getElementById('s-pending').textContent=pending.length;
-  document.getElementById('s-guests').textContent=served+'/'+totalExpected;
+  document.getElementById('s-guests').textContent=served;
   document.getElementById('rem-count').textContent=pending.length;
   document.getElementById('rem-sub').textContent=pending.length===0?'All rooms accounted for!':pending.length+' room'+(pending.length>1?'s':'')+' expected';
   document.getElementById('prog-fill').style.width=pct+'%';
@@ -730,7 +757,6 @@ function buildReportHTML(data, dateLabel){
   const arrived=data.filter(g=>g.arrived).sort((a,b)=>(a.arrivalTime||'').localeCompare(b.arrivalTime||''));
   const pending=data.filter(g=>!g.arrived);
   const served=arrived.reduce((s,g)=>s+(Number(g.adults)||0),0);
-  const totalExpected=data.reduce((s,g)=>s+(Number(g.adults)||0),0);
   const rate=data.length?Math.round((arrived.length/data.length)*100):0;
   const paidExtList=data.filter(g=>g.paidExt);
   const extRev=paidExtList.reduce((s,g)=>s+(Number(g.adults)||0)*EXT_PRICE,0);
@@ -759,7 +785,7 @@ function buildReportHTML(data, dateLabel){
       <div class="stat-card"><div class="stat-label">Total rooms</div><div class="stat-value">${data.length}</div></div>
       <div class="stat-card"><div class="stat-label">Arrived</div><div class="stat-value green">${arrived.length}</div></div>
       <div class="stat-card"><div class="stat-label">Rate</div><div class="stat-value gold">${rate}%</div></div>
-      <div class="stat-card"><div class="stat-label">Guests served</div><div class="stat-value">${served}/${totalExpected}</div></div>
+      <div class="stat-card"><div class="stat-label">Guests served</div><div class="stat-value">${served}</div></div>
     </div>
     <div class="report-section">
       <div class="section-title green-sec">&#128176; Revenue — External guests</div>
@@ -790,7 +816,7 @@ function buildReportHTML(data, dateLabel){
       <div class="sum-row"><span class="sum-key">Rooms arrived</span><span class="sum-val green">${arrived.length}</span></div>
       <div class="sum-row"><span class="sum-key">Not yet arrived</span><span class="sum-val amber">${pending.length}</span></div>
       <div class="sum-row"><span class="sum-key">External paying guests</span><span class="sum-val gold">${paidExtList.length}</span></div>
-      <div class="sum-row"><span class="sum-key">Total guests served</span><span class="sum-val blue">${served}/${totalExpected}</span></div>
+      <div class="sum-row"><span class="sum-key">Total guests served</span><span class="sum-val blue">${served}</span></div>
       <div class="sum-row"><span class="sum-key">Avg pax per room</span><span class="sum-val">${avg}</span></div>
       <div class="sum-row"><span class="sum-key">First arrival</span><span class="sum-val">${first}</span></div>
       <div class="sum-row"><span class="sum-key">Last arrival</span><span class="sum-val">${last}</span></div>
@@ -849,6 +875,64 @@ function renderHistory(){
       </div>
     </div>`;
   }).join('');
+}
+
+function clearHistorySearch(){
+  document.getElementById('history-search-input').value='';
+  document.getElementById('history-search-results').innerHTML='';
+}
+
+function searchGuestHistory(){
+  const q=document.getElementById('history-search-input').value.trim().toLowerCase();
+  const el=document.getElementById('history-search-results');
+  if(q.length<2){el.innerHTML='';return;}
+
+  const history=getHistory();
+  const dates=Object.keys(history).sort().reverse();
+  const results=[];
+
+  dates.forEach(date=>{
+    const entry=history[date];
+    const data=entry.guests||[];
+    const matches=data.filter(g=>
+      g.room.toLowerCase().includes(q)||
+      g.name.toLowerCase().includes(q)
+    );
+    matches.forEach(g=>{results.push({date,entry,guest:g});});
+  });
+
+  if(!results.length){
+    el.innerHTML=`<div style="color:var(--muted);font-size:13px;padding:8px 0;">No results for "${q}"</div>`;
+    return;
+  }
+
+  el.innerHTML=`
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">${results.length} result${results.length>1?'s':''} found</div>
+    ${results.map(r=>{
+      const d=new Date(r.date+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+      const g=r.guest;
+      const time=g.arrivalTime||'';
+      const status=g.arrived
+        ?`<span style="color:var(--green);font-weight:600;">✓ Arrived ${time?'at '+time:''}</span>`
+        :`<span style="color:var(--muted);">✗ Did not come</span>`;
+      const extras=[];
+      if(g.paidExt) extras.push(`<span style="background:var(--gold-bg);color:var(--gold);border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;">External €${Number(g.adults)*EXT_PRICE}</span>`);
+      if(g.allergy) extras.push(`<span style="background:var(--red-bg);color:var(--red);border-radius:4px;padding:1px 6px;font-size:10px;">⚠ ${g.allergy}</span>`);
+
+      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:11px 14px;margin-bottom:7px;">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="font-family:'DM Mono',monospace;font-size:15px;font-weight:500;min-width:38px;">${g.room}</span>
+          <span style="font-size:14px;font-weight:600;flex:1;">${g.name}</span>
+          <span style="font-size:11px;color:var(--muted);">${g.pkg} · ${g.adults} adult${Number(g.adults)>1?'s':''}</span>
+        </div>
+        <div style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:12px;color:var(--muted);">${d}</span>
+          <span style="font-size:12px;">${status}</span>
+          ${extras.join(' ')}
+        </div>
+      </div>`;
+    }).join('')}
+  `;
 }
 
 function importJSONHistory(e){
@@ -1524,8 +1608,6 @@ function renderManualStats(){
   const peakCounts={};entries.forEach(e=>{if(e.peak)peakCounts[e.peak]=(peakCounts[e.peak]||0)+1;});
   const topPeak=Object.entries(peakCounts).sort((a,b)=>b[1]-a[1])[0];
   const labels=entries.map(e=>new Date(e.date+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}));
-  const revData=entries.map(e=>e.extrev);
-  const occData=entries.map(e=>e.total?Math.round(e.arrived/e.total*100):0);
 
   document.getElementById('manual-stats-content').innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px;">
@@ -1571,11 +1653,8 @@ function renderManualStats(){
   `;
 
   Chart.defaults.color='#8b90a8';Chart.defaults.borderColor='rgba(255,255,255,0.06)';
-
-  new Chart(document.getElementById('manual-chart-rev'),{type:'bar',data:{labels,datasets:[{label:'Revenue (€)',data:revData,backgroundColor:'rgba(52,211,153,0.3)',borderColor:'#34d399',borderWidth:2,borderRadius:6}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'}},y:{grid:{color:'rgba(255,255,255,0.04)'},beginAtZero:true,ticks:{callback:v=>'€'+v}}}}});
-
-  new Chart(document.getElementById('manual-chart-occ'),{type:'line',data:{labels,datasets:[{label:'Occupancy %',data:occData,borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.1)',borderWidth:2,pointBackgroundColor:'#f59e0b',pointRadius:4,fill:true,tension:0.3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'}},y:{grid:{color:'rgba(255,255,255,0.04)'},beginAtZero:true,max:100,ticks:{callback:v=>v+'%'}}}}});
-
+  new Chart(document.getElementById('manual-chart-rev'),{type:'bar',data:{labels,datasets:[{label:'Revenue (€)',data:entries.map(e=>e.extrev),backgroundColor:'rgba(52,211,153,0.3)',borderColor:'#34d399',borderWidth:2,borderRadius:6}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'}},y:{grid:{color:'rgba(255,255,255,0.04)'},beginAtZero:true,ticks:{callback:v=>'€'+v}}}}});
+  new Chart(document.getElementById('manual-chart-occ'),{type:'line',data:{labels,datasets:[{label:'Occupancy %',data:entries.map(e=>e.total?Math.round(e.arrived/e.total*100):0),borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.1)',borderWidth:2,pointBackgroundColor:'#f59e0b',pointRadius:4,fill:true,tension:0.3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'}},y:{grid:{color:'rgba(255,255,255,0.04)'},beginAtZero:true,max:100,ticks:{callback:v=>v+'%'}}}}});
   document.getElementById('manual-print-btn').style.display='block';
 }
 
