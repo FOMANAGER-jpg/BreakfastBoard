@@ -1381,16 +1381,19 @@ function confirmImport(){
 let chartRevenue=null, chartOccupancy=null, chartPeak=null;
 
 function switchStatsTab(tab){
-  const isH=tab==='history';
-  document.getElementById('stats-history-section').style.display=isH?'block':'none';
-  document.getElementById('stats-manual-section').style.display=isH?'none':'block';
-  document.getElementById('stab-history').style.borderColor=isH?'var(--gold)':'var(--border)';
-  document.getElementById('stab-history').style.background=isH?'var(--gold-bg)':'var(--surface)';
-  document.getElementById('stab-history').style.color=isH?'var(--gold)':'var(--muted)';
-  document.getElementById('stab-manual').style.borderColor=!isH?'var(--gold)':'var(--border)';
-  document.getElementById('stab-manual').style.background=!isH?'var(--gold-bg)':'var(--surface)';
-  document.getElementById('stab-manual').style.color=!isH?'var(--gold)':'var(--muted)';
-  if(!isH) renderManualList();
+  const tabs=['history','manual'];
+  tabs.forEach(t=>{
+    const el=document.getElementById('stats-'+t+'-section');
+    const btn=document.getElementById('stab-'+t);
+    if(!el||!btn) return;
+    const active=t===tab;
+    el.style.display=active?'block':'none';
+    btn.style.borderColor=active?'var(--gold)':'var(--border)';
+    btn.style.background=active?'var(--gold-bg)':'var(--surface)';
+    btn.style.color=active?'var(--gold)':'var(--muted)';
+    btn.style.fontWeight=active?'600':'400';
+  });
+  if(tab==='manual') renderManualList();
 }
 
 function renderStats(){
@@ -1510,6 +1513,7 @@ function addManualEntry(){
   ['me-date','me-total','me-arrived','me-guests','me-extrev','me-notes'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('me-peak').value='';
   renderManualList();
+  alert('✓ Entry added! Press "Save to History" to save it.');
 }
 
 function deleteManualEntry(date){
