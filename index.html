@@ -457,7 +457,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div id="stats-manual-section" style="display:none;">
       <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:16px;margin-bottom:14px;">
         <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">Πρόσθεσε δεδομένα από χαρτί για παλιές μέρες.</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px;">
           <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;">Date</label><input type="date" id="me-date" style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 11px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;"></div>
           <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;">Total rooms</label><input type="number" id="me-total" min="0" placeholder="e.g. 140" style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 11px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;"></div>
           <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;">Rooms arrived</label><input type="number" id="me-arrived" min="0" placeholder="e.g. 120" style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 11px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;"></div>
@@ -469,9 +469,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
               <option>07:00</option><option>07:30</option><option>08:00</option><option>08:30</option><option>09:00</option><option>09:30</option><option>10:00</option><option>10:30</option>
             </select>
           </div>
-          <div style="grid-column:1/-1;"><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;">Notes (optional)</label><input type="text" id="me-notes" placeholder="e.g. Full house" style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 11px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;"></div>
+          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;">Notes (optional)</label><input type="text" id="me-notes" placeholder="e.g. Full house" style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 11px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;"></div>
         </div>
-        <button onclick="addManualEntry()" style="width:100%;background:var(--gold);border:none;border-radius:var(--radius);padding:11px;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">+ Add Entry</button>
+        <button id="btn-add-manual-entry" style="width:100%;background:var(--gold);border:none;border-radius:var(--radius);padding:11px;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">+ Add Entry</button>
       </div>
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700;margin-bottom:10px;">Saved entries</div>
       <div id="manual-entries-list"></div>
@@ -600,6 +600,9 @@ function init(){
   initFirebase();
   initFirebaseHistory();
   startAutoSave();
+  // Attach manual entry button listener
+  const btn=document.getElementById('btn-add-manual-entry');
+  if(btn) btn.addEventListener('click', addManualEntry);
 }
 
 function startAutoSave(){
@@ -659,6 +662,7 @@ function showTab(name,btn){
   if(name==='report')renderReport(guests);
   if(name==='history')renderHistory();
   if(name==='stats'){
+    switchStatsTab('history');
     const today=new Date(), weekAgo=new Date(today);
     weekAgo.setDate(weekAgo.getDate()-6);
     if(!document.getElementById('stats-from').value) document.getElementById('stats-from').value=weekAgo.toISOString().split('T')[0];
