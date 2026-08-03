@@ -575,13 +575,14 @@ let _fbHistory={};
 function getHistory(){ return _fbHistory; }
 
 function initFirebaseHistory(){
-  if(!window._fbReady){ document.addEventListener('firebase-ready', initFirebaseHistory); return; }
+  if(!window._fbReady){
+    document.addEventListener('firebase-ready', ()=>initFirebaseHistory());
+    return;
+  }
   window._fbListen('breakfast_history',(data)=>{
-    if(data&&typeof data==='object'){
+    if(data&&typeof data==='object'&&Object.keys(data).length>0){
       _fbHistory=data;
-      if(document.getElementById('panel-history').classList.contains('active')){
-        renderHistory();
-      }
+      renderHistory();
     }
   });
 }
@@ -868,7 +869,9 @@ function renderHistory(){
   }
   el.innerHTML=dates.map(date=>{
     const entry=history[date];
-    const data=entry.guests;
+    if(!entry) return '';
+    const data=Array.isArray(entry.guests)?entry.guests:(entry.rooms||[]);
+    if(!data.length) return '';
     const arrived=data.filter(g=>g.arrived);
     const rate=data.length?Math.round((arrived.length/data.length)*100):0;
     const extRev=data.filter(g=>g.paidExt).reduce((s,g)=>s+(Number(g.adults)||0)*EXT_PRICE,0);
@@ -897,7 +900,7 @@ function renderHistory(){
         </div>
       </div>
     </div>`;
-  }).join('');
+  }).filter(Boolean).join('');
 }
 
 function clearHistorySearch(){
